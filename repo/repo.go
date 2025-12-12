@@ -3,12 +3,19 @@ package repo
 import (
 	"fmt"
 	"log"
-	"log/slog"
 	"strings"
 
 	git "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/utils/merkletrie"
+)
+
+type PortChange int
+
+const (
+	PortAdded = iota
+	PortRemoved
+	PortChanged
 )
 
 type PortName struct {
@@ -38,12 +45,10 @@ func getPortName(path string) (*PortName, bool) {
 	return &portName, isRoot
 }
 
-func FindUpdated(portsDir string, lastCommitHashStr string) []PortName {
+func FindUpdated(portsDir string, lastCommitHashStr string) map[PortName]PortChange {
 	portsTree, err := git.PlainOpen(portsDir)
 
-	addedPorts := make(map[PortName]bool)
-	deletedPorts := make(map[PortName]bool)
-	changedPorts := make(map[PortName]bool)
+	ports := make(map[PortName]PortChange)
 
 	if err != nil {
 		log.Fatal("Unable to open ports tree: ", err)
@@ -103,23 +108,15 @@ func FindUpdated(portsDir string, lastCommitHashStr string) []PortName {
 			}
 
 			if isRoot {
-				_, exists := changedPorts[*portName]
-
-				if exists {
-					// Ignore changes to an added port in
-					// the same diff.
-					delete(changedPorts, *portName)
-				}
-
-				addedPorts[*portName] = true
+				ports[*portName] = PortAdded
 			} else {
-				_, exists := addedPorts[*portName]
+				_, exists := ports[*portName]
 
 				if !exists {
 					// Don't mark a newly-added port as
 					// changed (e.g. if we see inserts for
 					// files in the port directory)
-					changedPorts[*portName] = true
+					ports[*portName] = PortChanged
 				}
 			}
 
@@ -134,23 +131,15 @@ func FindUpdated(portsDir string, lastCommitHashStr string) []PortName {
 			}
 
 			if isRoot {
-				_, exists := changedPorts[*portName]
-
-				if exists {
-					// Ignore changes to a deleted port in
-					// the same diff.
-					delete(changedPorts, *portName)
-				}
-
-				deletedPorts[*portName] = true
+				ports[*portName] = PortRemoved
 			} else {
-				_, exists := addedPorts[*portName]
+				_, exists := ports[*portName]
 
 				if !exists {
 					// Don't mark a newly-added port as
 					// changed (e.g. if we see inserts for
 					// files in the port directory)
-					changedPorts[*portName] = true
+					ports[*portName] = PortChanged
 				}
 			}
 
@@ -164,22 +153,24 @@ func FindUpdated(portsDir string, lastCommitHashStr string) []PortName {
 				continue
 			}
 
-			_, existsAdded := addedPorts[*portName]
-			_, existsDeleted := deletedPorts[*portName]
+			_, exists := ports[*portName]
 
-			if existsAdded || existsDeleted {
-				// Ignore changes if we are adding or
-				// deleting a port
-				continue
+			if !exists {
+				// Don't mark a newly-added port as
+				// changed (e.g. if we see inserts for
+				// files in the port directory)
+				ports[*portName] = PortChanged
 			}
-
-			changedPorts[*portName] = true
 
 			continue
 		}
 	}
 
-	slog.Info("Changed", changedPorts)
+	portNames := make([]PortName, 0, len(ports))
 
-	return []PortName{}
+	for portName := range ports {
+		portNames = append(portNames, portName)
+	}
+
+	return ports
 }
