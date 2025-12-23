@@ -1,1 +1,3 @@
 portsDir: "/usr/ports"
+
+databaseUrl: "postgres://postgres:postgres@localhost/?sslmode=disable"
