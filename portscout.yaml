@@ -1,3 +1,3 @@
 portsDir: "/usr/ports"
 
-databaseUrl: "postgres://postgres:postgres@localhost/?sslmode=disable"
+databaseUrl: "postgres://postgres:postgres@localhost/portscout?sslmode=disable"
