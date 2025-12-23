@@ -6,6 +6,16 @@ type PortName struct {
 }
 
 type PortInfo struct {
-	Name    PortName
-	Version string
+	Name             PortName
+	DistName         string
+	DistVersion      string
+	DistFiles        []string
+	ExtractSuffix    string
+	MasterSites      []string
+	MasterSiteSubDir string
+	SlavePort        string
+	MasterPort       string
+	Portscout        string
+	Maintainer       string
+	Comment          string
 }

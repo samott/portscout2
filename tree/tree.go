@@ -11,7 +11,11 @@ import (
 
 func QueryPorts(portsDir string, ports []types.PortName) []types.PortInfo {
 	results := make([]types.PortInfo, 0, len(ports))
-	queryVars := []string{"PORTVERSION"}
+	queryVars := []string{
+		"DISTNAME", "DISTVERSION", "DISTFILES", "EXTRACT_SUFX", "MASTER_SITES",
+		"MASTER_SITE_SUBDIR", "SLAVE_PORT", "MASTER_PORT", "PORTSCOUT",
+		"MAINTAINER", "COMMENT",
+	}
 
 	for _, port := range ports {
 		makeFlags := []string{"make", "-C", filepath.Join(portsDir, port.Category, port.Name)}
@@ -35,9 +39,22 @@ func QueryPorts(portsDir string, ports []types.PortName) []types.PortInfo {
 
 		lines := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")
 
+		files := strings.Split(lines[3], " ")
+		sites := strings.Split(lines[4], " ")
+
 		results = append(results, types.PortInfo{
-			port,
-			lines[0],
+			Name:             port,
+			DistName:         lines[0],
+			DistVersion:      lines[1],
+			DistFiles:        files,
+			ExtractSuffix:    lines[3],
+			MasterSites:      sites,
+			MasterSiteSubDir: lines[5],
+			SlavePort:        lines[6],
+			MasterPort:       lines[7],
+			Portscout:        lines[8],
+			Maintainer:       lines[9],
+			Comment:          lines[10],
 		})
 	}
 
