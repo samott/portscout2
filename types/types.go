@@ -19,3 +19,7 @@ type PortInfo struct {
 	Maintainer       string
 	Comment          string
 }
+
+func (p PortName) String() string {
+	return p.Category + "/" + p.Name
+}
