@@ -1,7 +1,7 @@
 CREATE TABLE "ports" (
 	"name" text,
 	"version" text,
-	"newversion" text,
+	"newVersion" text,
 	"category" text,
 	"checkedAt" timestamp,
 	"updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
