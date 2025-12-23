@@ -9,6 +9,7 @@ import (
 	"github.com/samott/portscout2/config"
 	"github.com/samott/portscout2/repo"
 	"github.com/samott/portscout2/tree"
+	"github.com/samott/portscout2/db"
 	"github.com/samott/portscout2/types"
 )
 
@@ -26,6 +27,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	db, err := db.NewDB(cfg.DatabaseUrl);
+
+	if err != nil {
+		slog.Error("Failed to connect to database")
+		os.Exit(1)
+	}
+
 	ports := repo.FindUpdated(cfg.PortsDir, "b700f9a18a81834a7e5c2046cda87c290bfa229a")
 
 	slog.Info("Ports", "ports", ports)
@@ -33,5 +41,6 @@ func main() {
 	for port := range ports {
 		pi := tree.QueryPorts(cfg.PortsDir, []types.PortName{port})
 		slog.Info("Port", "info", pi)
+		db.UpdatePort(pi[0]);
 	}
 }
