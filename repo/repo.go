@@ -8,6 +8,8 @@ import (
 	git "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/utils/merkletrie"
+
+	"github.com/samott/portscout2/types"
 )
 
 type PortChange int
@@ -18,12 +20,7 @@ const (
 	PortChanged
 )
 
-type PortName struct {
-	category string
-	name     string
-}
-
-func getPortName(path string) (*PortName, bool) {
+func getPortName(path string) (*types.PortName, bool) {
 	frags := strings.Split(path, "/")
 
 	if len(frags) < 2 || (frags[0][0] >= 'A' && frags[0][0] <= 'Z') {
@@ -40,15 +37,15 @@ func getPortName(path string) (*PortName, bool) {
 	// case actually happens...)
 	isRoot := (len(frags) == 2) || (len(frags) == 3 && len(frags[2]) == 0)
 
-	portName := PortName{frags[0], frags[1]}
+	portName := types.PortName{frags[0], frags[1]}
 
 	return &portName, isRoot
 }
 
-func FindUpdated(portsDir string, lastCommitHashStr string) map[PortName]PortChange {
+func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]PortChange {
 	portsTree, err := git.PlainOpen(portsDir)
 
-	ports := make(map[PortName]PortChange)
+	ports := make(map[types.PortName]PortChange)
 
 	if err != nil {
 		log.Fatal("Unable to open ports tree: ", err)
@@ -166,7 +163,7 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[PortName]PortCha
 		}
 	}
 
-	portNames := make([]PortName, 0, len(ports))
+	portNames := make([]types.PortName, 0, len(ports))
 
 	for portName := range ports {
 		portNames = append(portNames, portName)
