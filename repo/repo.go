@@ -99,10 +99,6 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		from, to := patch.FilePatches()[0].Files()
 
 		if action == merkletrie.Insert {
-			if to.Mode() != filemode.Dir {
-				continue
-			}
-
 			portName, isRoot := getPortName(to.Path())
 
 			if portName == nil {
@@ -110,6 +106,10 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 			}
 
 			if isRoot {
+				if to.Mode() != filemode.Dir {
+					continue
+				}
+
 				ports[*portName] = PortAdded
 			} else {
 				_, exists := ports[*portName]
@@ -126,10 +126,6 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		}
 
 		if action == merkletrie.Delete {
-			if from.Mode() != filemode.Dir {
-				continue
-			}
-
 			portName, isRoot := getPortName(from.Path())
 
 			if portName == nil {
@@ -137,6 +133,10 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 			}
 
 			if isRoot {
+				if from.Mode() != filemode.Dir {
+					continue
+				}
+
 				ports[*portName] = PortRemoved
 			} else {
 				_, exists := ports[*portName]
@@ -153,13 +153,13 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		}
 
 		if action == merkletrie.Modify {
-			if to.Mode() != filemode.Dir {
+			portName, isRoot := getPortName(to.Path())
+
+			if portName == nil {
 				continue
 			}
 
-			portName, _ := getPortName(to.Path())
-
-			if portName == nil {
+			if isRoot && to.Mode() != filemode.Dir {
 				continue
 			}
 
