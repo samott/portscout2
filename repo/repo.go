@@ -7,6 +7,7 @@ import (
 
 	git "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/filemode"
 	"github.com/go-git/go-git/v6/utils/merkletrie"
 
 	"github.com/samott/portscout2/types"
@@ -98,6 +99,10 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		from, to := patch.FilePatches()[0].Files()
 
 		if action == merkletrie.Insert {
+			if to.Mode() != filemode.Dir {
+				continue
+			}
+
 			portName, isRoot := getPortName(to.Path())
 
 			if portName == nil {
@@ -121,6 +126,10 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		}
 
 		if action == merkletrie.Delete {
+			if from.Mode() != filemode.Dir {
+				continue
+			}
+
 			portName, isRoot := getPortName(from.Path())
 
 			if portName == nil {
@@ -144,6 +153,10 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		}
 
 		if action == merkletrie.Modify {
+			if to.Mode() != filemode.Dir {
+				continue
+			}
+
 			portName, _ := getPortName(to.Path())
 
 			if portName == nil {
