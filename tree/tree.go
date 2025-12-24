@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"bytes"
 	"log"
 	"os/exec"
 	"path/filepath"
@@ -31,10 +32,13 @@ func QueryPorts(portsDir string, ports []types.PortName) []types.PortInfo {
 
 		cmd := exec.Command("make", flags...)
 
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+
 		output, err := cmd.Output()
 
 		if err != nil {
-			log.Fatal("Make call failed: ", err)
+			log.Fatal("Make call failed: ", err, " msg: ", stderr.String())
 		}
 
 		lines := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")
