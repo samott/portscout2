@@ -64,5 +64,28 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 	return nil
 }
 
+func (db *DB) RemovePort(port types.PortInfo) error {
+	slog.Info("Removing port", "port", port.Name)
+
+	query := db.gdb.From("ports").Delete().Where(goqu.Ex{
+		"name":     port.Name.Name,
+		"category": port.Name.Category,
+	}).Prepared(true)
+
+	sql, args, err := query.ToSQL()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = db.db.Exec(sql, args...)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *DB) GetPorts(limit int, offset int) {
 }
