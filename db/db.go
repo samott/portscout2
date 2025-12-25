@@ -87,7 +87,7 @@ func (db *DB) RemovePort(port types.PortInfo) error {
 	return nil
 }
 
-func (db *DB) RemovePort(ports []types.PortInfo) error {
+func (db *DB) RemovePorts(ports []types.PortInfo) error {
 	// TODO: reimplement more efficiently
 	for _, port := range ports {
 		err := db.RemovePort(port)
@@ -96,6 +96,8 @@ func (db *DB) RemovePort(ports []types.PortInfo) error {
 			return err
 		}
 	}
+
+	return nil
 }
 
 func (db *DB) GetPorts(limit int, offset int) {
