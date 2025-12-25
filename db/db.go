@@ -64,12 +64,12 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 	return nil
 }
 
-func (db *DB) RemovePort(port types.PortInfo) error {
+func (db *DB) RemovePort(port types.PortName) error {
 	slog.Info("Removing port", "port", port.Name)
 
 	query := db.gdb.From("ports").Delete().Where(goqu.Ex{
-		"name":     port.Name.Name,
-		"category": port.Name.Category,
+		"name":     port.Name,
+		"category": port.Name,
 	}).Prepared(true)
 
 	sql, args, err := query.ToSQL()
@@ -87,7 +87,7 @@ func (db *DB) RemovePort(port types.PortInfo) error {
 	return nil
 }
 
-func (db *DB) RemovePorts(ports []types.PortInfo) error {
+func (db *DB) RemovePorts(ports []types.PortName) error {
 	// TODO: reimplement more efficiently
 	for _, port := range ports {
 		err := db.RemovePort(port)
