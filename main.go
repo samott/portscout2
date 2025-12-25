@@ -53,7 +53,12 @@ func main() {
 
 	db.RemovePorts(removedPorts)
 
-	tr.QueryPorts(updatedPorts, func(pi types.PortInfo) {
+	_, err = tr.QueryPorts(updatedPorts, func(pi types.PortInfo) {
 		slog.Info("Port", "info", pi)
 	})
+
+	if err != nil {
+		slog.Error("Failed to query all ports", "err", err)
+		os.Exit(1)
+	}
 }
