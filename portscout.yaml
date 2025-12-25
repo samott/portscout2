@@ -1,5 +1,7 @@
-makeCmd: "make"
+tree:
+  makeCmd: "make"
+  makeThreads: 10
+  portsDir: "/usr/ports"
 
-portsDir: "/usr/ports"
-
-databaseUrl: "postgres://postgres:postgres@localhost/portscout?sslmode=disable"
+db:
+  url: "postgres://postgres:postgres@localhost/portscout?sslmode=disable"

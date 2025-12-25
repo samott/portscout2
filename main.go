@@ -27,18 +27,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := db.NewDB(cfg.DatabaseUrl)
+	db, err := db.NewDB(cfg.Db.Url)
 
 	if err != nil {
 		slog.Error("Failed to connect to database")
 		os.Exit(1)
 	}
 
-	ports := repo.FindUpdated(cfg.PortsDir, "b700f9a18a81834a7e5c2046cda87c290bfa229a")
+	ports := repo.FindUpdated(cfg.Tree.PortsDir, "b700f9a18a81834a7e5c2046cda87c290bfa229a")
 
 	slog.Info("Ports", "ports", ports)
 
-	tr := tree.NewTree(cfg.MakeCmd, cfg.PortsDir, 3)
+	tr := tree.NewTree(cfg.Tree.MakeCmd, cfg.Tree.PortsDir, cfg.Tree.MakeThreads)
 
 	updatedPorts := make([]types.PortName, 0, len(ports))
 	removedPorts := make([]types.PortName, 0)

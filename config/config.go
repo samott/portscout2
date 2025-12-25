@@ -6,9 +6,15 @@ import (
 )
 
 type Config struct {
-	PortsDir    string `yaml:"portsDir"`
-	DatabaseUrl string `yaml:"databaseUrl"`
-	MakeCmd     string `yaml:"makeCmd"`
+	Db struct {
+		Url string `yaml:"url"`
+	} `yaml:"db"`
+
+	Tree struct {
+		PortsDir    string `yaml:"portsDir"`
+		MakeCmd     string `yaml:"makeCmd"`
+		MakeThreads int    `yaml:"makeThreads"`
+	} `yaml:"tree"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
