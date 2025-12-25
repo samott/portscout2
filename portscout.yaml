@@ -1,3 +1,5 @@
+makeCmd: "make"
+
 portsDir: "/usr/ports"
 
 databaseUrl: "postgres://postgres:postgres@localhost/portscout?sslmode=disable"

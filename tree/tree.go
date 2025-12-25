@@ -2,24 +2,54 @@ package tree
 
 import (
 	"bytes"
-	"log"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/samott/portscout2/types"
 )
 
-func QueryPorts(portsDir string, ports []types.PortName) []types.PortInfo {
-	results := make([]types.PortInfo, 0, len(ports))
+type Tree struct {
+	makeCmd  string
+	portsDir string
+	sem      chan struct{}
+	maxProc  int
+}
+
+func NewTree(makeCmd string, portsDir string, maxProc int) *Tree {
+	return &Tree{
+		makeCmd:  makeCmd,
+		portsDir: portsDir,
+		maxProc:  maxProc,
+		sem:      make(chan struct{}, maxProc),
+	}
+}
+
+func (tree *Tree) QueryPorts(ports []types.PortName, callback func(types.PortInfo)) (int32, error) {
+	var wg sync.WaitGroup
+
+	var firstErr error = nil
+	var errGuard sync.Once
+
 	queryVars := []string{
 		"DISTNAME", "DISTVERSION", "DISTFILES", "EXTRACT_SUFX", "MASTER_SITES",
 		"MASTER_SITE_SUBDIR", "SLAVE_PORT", "MASTER_PORT", "PORTSCOUT",
 		"MAINTAINER", "COMMENT",
 	}
 
+	var completedCount int32 = 0
+
 	for _, port := range ports {
-		makeFlags := []string{"make", "-C", filepath.Join(portsDir, port.Category, port.Name)}
+		if firstErr != nil {
+			break
+		}
+
+		wg.Add(1)
+
+		makeFlags := []string{"-C", filepath.Join(tree.portsDir, port.Category, port.Name)}
 
 		flags := make([]string, 0, len(makeFlags)+2*len(queryVars))
 
@@ -30,37 +60,53 @@ func QueryPorts(portsDir string, ports []types.PortName) []types.PortInfo {
 			flags = append(flags, v)
 		}
 
-		cmd := exec.Command("make", flags...)
+		go func() {
+			defer wg.Done()
 
-		var stderr bytes.Buffer
-		cmd.Stderr = &stderr
+			tree.sem <- struct{}{}
 
-		output, err := cmd.Output()
+			defer func() {
+				<-tree.sem
+			}()
 
-		if err != nil {
-			log.Fatal("Make call failed: ", err, " msg: ", stderr.String())
-		}
+			cmd := exec.Command(tree.makeCmd, flags...)
 
-		lines := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")
+			var stderr bytes.Buffer
 
-		files := strings.Split(lines[3], " ")
-		sites := strings.Split(lines[4], " ")
+			cmd.Stderr = &stderr
 
-		results = append(results, types.PortInfo{
-			Name:             port,
-			DistName:         lines[0],
-			DistVersion:      lines[1],
-			DistFiles:        files,
-			ExtractSuffix:    lines[3],
-			MasterSites:      sites,
-			MasterSiteSubDir: lines[5],
-			SlavePort:        lines[6],
-			MasterPort:       lines[7],
-			Portscout:        lines[8],
-			Maintainer:       lines[9],
-			Comment:          lines[10],
-		})
+			output, err := cmd.Output()
+
+			if err != nil {
+				errGuard.Do(func() { firstErr = fmt.Errorf("Make call failed: %q: %w", stderr.String(), err) })
+				return
+			}
+
+			lines := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")
+
+			files := strings.Split(lines[3], " ")
+			sites := strings.Split(lines[4], " ")
+
+			callback(types.PortInfo{
+				Name:             port,
+				DistName:         lines[0],
+				DistVersion:      lines[1],
+				DistFiles:        files,
+				ExtractSuffix:    lines[3],
+				MasterSites:      sites,
+				MasterSiteSubDir: lines[5],
+				SlavePort:        lines[6],
+				MasterPort:       lines[7],
+				Portscout:        lines[8],
+				Maintainer:       lines[9],
+				Comment:          lines[10],
+			})
+
+			atomic.AddInt32(&completedCount, 1)
+		}()
 	}
 
-	return results
+	wg.Wait()
+
+	return completedCount, firstErr
 }
