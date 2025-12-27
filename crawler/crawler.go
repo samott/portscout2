@@ -3,7 +3,6 @@ package crawler
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"fmt"
 	"net/url"
@@ -133,7 +132,6 @@ func (c *Crawler) crawlFtp(port types.PortInfo, site *url.URL) ([]*url.URL, erro
 		if entry.Type != ftp.EntryTypeFile {
 			continue
 		}
-		slog.Info("OK", "file", entry.Name, "path", site.Path)
 
 		fileUrl := site.JoinPath(site.String(), entry.Name)
 
