@@ -34,7 +34,6 @@ type CrawlJob struct {
 type CrawlResult struct {
 	Port types.PortName
 	Site *url.URL
-	//distFile string;
 	Files []*url.URL
 	Err   error
 }
