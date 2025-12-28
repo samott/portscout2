@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/samott/portscout2/types"
 )
@@ -17,6 +16,17 @@ type Tree struct {
 	portsDir string
 	sem      chan struct{}
 	maxProc  int
+	in       chan QueryJob
+	out      chan QueryResult
+}
+
+type QueryJob struct {
+	Port types.PortName
+}
+
+type QueryResult struct {
+	Info types.PortInfo
+	Err  error
 }
 
 func NewTree(makeCmd string, portsDir string, maxProc int) *Tree {
@@ -25,14 +35,21 @@ func NewTree(makeCmd string, portsDir string, maxProc int) *Tree {
 		portsDir: portsDir,
 		maxProc:  maxProc,
 		sem:      make(chan struct{}, maxProc),
+		in:       make(chan QueryJob, maxProc),
+		out:      make(chan QueryResult, maxProc),
 	}
 }
 
-func (tree *Tree) QueryPorts(ports []types.PortName, callback func(types.PortInfo)) (int32, error) {
-	var wg sync.WaitGroup
+func (c *Tree) In() chan<- QueryJob {
+	return c.in
+}
 
-	var firstErr error = nil
-	var errGuard sync.Once
+func (c *Tree) Out() <-chan QueryResult {
+	return c.out
+}
+
+func (tree *Tree) QueryPorts() {
+	var wg sync.WaitGroup
 
 	queryVars := []string{
 		"DISTNAME", "DISTVERSION", "DISTFILES", "EXTRACT_SUFX", "MASTER_SITES",
@@ -40,12 +57,8 @@ func (tree *Tree) QueryPorts(ports []types.PortName, callback func(types.PortInf
 		"MAINTAINER", "COMMENT",
 	}
 
-	var completedCount int32 = 0
-
-	for _, port := range ports {
-		if firstErr != nil {
-			break
-		}
+	for job := range tree.in {
+		port := job.Port
 
 		wg.Add(1)
 
@@ -78,7 +91,12 @@ func (tree *Tree) QueryPorts(ports []types.PortName, callback func(types.PortInf
 			output, err := cmd.Output()
 
 			if err != nil {
-				errGuard.Do(func() { firstErr = fmt.Errorf("Make call failed: %q: %w", stderr.String(), err) })
+				tree.out <- QueryResult{
+					Info: types.PortInfo{
+						Name: port,
+					},
+					Err: fmt.Errorf("Make call failed: %q: %w", stderr.String(), err),
+				}
 				return
 			}
 
@@ -87,26 +105,26 @@ func (tree *Tree) QueryPorts(ports []types.PortName, callback func(types.PortInf
 			files := strings.Split(lines[3], " ")
 			sites := strings.Split(lines[4], " ")
 
-			callback(types.PortInfo{
-				Name:             port,
-				DistName:         lines[0],
-				DistVersion:      lines[1],
-				DistFiles:        files,
-				ExtractSuffix:    lines[3],
-				MasterSites:      sites,
-				MasterSiteSubDir: lines[5],
-				SlavePort:        lines[6],
-				MasterPort:       lines[7],
-				Portscout:        lines[8],
-				Maintainer:       lines[9],
-				Comment:          lines[10],
-			})
-
-			atomic.AddInt32(&completedCount, 1)
+			tree.out <- QueryResult{
+				Info: types.PortInfo{
+					Name:             port,
+					DistName:         lines[0],
+					DistVersion:      lines[1],
+					DistFiles:        files,
+					ExtractSuffix:    lines[3],
+					MasterSites:      sites,
+					MasterSiteSubDir: lines[5],
+					SlavePort:        lines[6],
+					MasterPort:       lines[7],
+					Portscout:        lines[8],
+					Maintainer:       lines[9],
+					Comment:          lines[10],
+				},
+				Err: nil,
+			}
 		}()
 	}
 
 	wg.Wait()
-
-	return completedCount, firstErr
+	close(tree.out)
 }

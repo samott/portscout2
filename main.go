@@ -10,7 +10,6 @@ import (
 	"github.com/samott/portscout2/db"
 	"github.com/samott/portscout2/repo"
 	"github.com/samott/portscout2/tree"
-	"github.com/samott/portscout2/types"
 )
 
 func main() {
@@ -40,25 +39,23 @@ func main() {
 
 	tr := tree.NewTree(cfg.Tree.MakeCmd, cfg.Tree.PortsDir, cfg.Tree.MakeThreads)
 
-	updatedPorts := make([]types.PortName, 0, len(ports))
-	removedPorts := make([]types.PortName, 0)
+	go tr.QueryPorts()
 
-	for name, change := range ports {
-		if change == repo.PortRemoved {
-			removedPorts = append(removedPorts, name)
-		} else {
-			updatedPorts = append(updatedPorts, name)
+	go func() {
+		for name, change := range ports {
+			if change == repo.PortRemoved {
+				db.RemovePort(name)
+			} else {
+				tr.In() <- tree.QueryJob{Port: name}
+			}
 		}
-	}
+	}()
 
-	db.RemovePorts(removedPorts)
-
-	_, err = tr.QueryPorts(updatedPorts, func(pi types.PortInfo) {
-		slog.Info("Port", "info", pi)
-	})
-
-	if err != nil {
-		slog.Error("Failed to query all ports", "err", err)
-		os.Exit(1)
-	}
+	go func() {
+		for port := range tr.Out() {
+			if port.Err == nil {
+				slog.Info("Port", "info", port.Info)
+			}
+		}
+	}()
 }
