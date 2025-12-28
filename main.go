@@ -49,13 +49,12 @@ func main() {
 				tr.In() <- tree.QueryJob{Port: name}
 			}
 		}
+		close(tr.In())
 	}()
 
-	go func() {
-		for port := range tr.Out() {
-			if port.Err == nil {
-				slog.Info("Port", "info", port.Info)
-			}
+	for port := range tr.Out() {
+		if port.Err == nil {
+			slog.Info("Port", "info", port.Info)
 		}
-	}()
+	}
 }
