@@ -31,16 +31,16 @@ type CrawlJob struct {
 }
 
 type CrawlResult struct {
-	Port types.PortName
-	Site *url.URL
+	Port  types.PortName
+	Site  *url.URL
 	Files []*url.URL
 	Err   error
 }
 
-func NewCrawler() *Crawler {
+func NewCrawler(chanBufSize int) *Crawler {
 	return &Crawler{
-		in:         make(chan CrawlJob),
-		out:        make(chan CrawlResult),
+		in:         make(chan CrawlJob, chanBufSize),
+		out:        make(chan CrawlResult, chanBufSize),
 		ftpTimeout: 30 * time.Second,
 		limiter:    nil,
 	}
