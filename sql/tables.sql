@@ -9,11 +9,26 @@ CREATE TABLE "ports" (
 	UNIQUE ("category", "name")
 );
 
+CREATE TABLE "repo" (
+	"id" integer PRIMARY KEY DEFAULT 1,
+	"lastCommit" text NOT NULL,
+	"syncedAt" timestamp,
+	CHECK ("id" = 1)
+);
+
 CREATE TABLE "hosts" (
 	"hostname" text,
 	"accessedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"isDown" boolean DEFAULT FALSE NOT NULL,
 	UNIQUE ("hostname")
+);
+
+INSERT INTO "repo" (
+	"lastCommit",
+	"syncedAt"
+) VALUES (
+	'',
+	CURRENT_TIMESTAMP
 );
 
 CREATE OR REPLACE FUNCTION update_updatedAt_column()
