@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 
 	"github.com/doug-martin/goqu/v9"
@@ -100,5 +101,41 @@ func (db *DB) RemovePorts(ports []types.PortName) error {
 	return nil
 }
 
-func (db *DB) GetPorts(limit int, offset int) {
+func (db *DB) GetLastCommit() (string, error) {
+	query := db.gdb.From("repo").Select("lastCommit").Limit(1).Prepared(true)
+
+	var lastCommit string
+	found, err := query.ScanVal(&lastCommit)
+
+	if err != nil {
+		return "", err
+	}
+
+	if !found {
+		return "", errors.New("tree state table not found in database")
+	}
+
+	return lastCommit, nil
+}
+
+func (db *DB) SetLastCommit(lastCommit string) error {
+	query := db.gdb.Update("repo").Set(
+		goqu.Record{
+			"lastCommit": lastCommit,
+		},
+	)
+
+	sql, args, err := query.ToSQL()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = db.db.Exec(sql, args...)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
