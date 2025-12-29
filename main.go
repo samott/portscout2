@@ -10,6 +10,7 @@ import (
 	"github.com/samott/portscout2/db"
 	"github.com/samott/portscout2/repo"
 	"github.com/samott/portscout2/tree"
+	"github.com/samott/portscout2/types"
 )
 
 func main() {
@@ -42,7 +43,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	ports := repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
+	var ports map[types.PortName]repo.PortChange
+
+	if lastCommitHash == "" {
+		ports = repo.FindAllPorts(cfg.Tree.PortsDir)
+	} else {
+		ports = repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
+	}
 
 	slog.Info("Ports", "ports", ports)
 

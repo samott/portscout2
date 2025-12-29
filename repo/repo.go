@@ -176,10 +176,80 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		}
 	}
 
-	portNames := make([]types.PortName, 0, len(ports))
+	return ports
+}
 
-	for portName := range ports {
-		portNames = append(portNames, portName)
+func FindAllPorts(portsDir string) map[types.PortName]PortChange {
+	portsTree, err := git.PlainOpen(portsDir)
+
+	ports := make(map[types.PortName]PortChange)
+
+	if err != nil {
+		log.Fatal("Unable to open ports tree: ", err)
+	}
+
+	head, err := portsTree.Head()
+
+	if err != nil {
+		log.Fatal("Unable to get HEAD: ", err)
+	}
+
+	commit, err := portsTree.CommitObject(head.Hash())
+
+	if err != nil {
+		log.Fatal("Unable to find commit: ", err)
+	}
+
+	tree, err := commit.Tree()
+
+	if err != nil {
+		log.Fatal("Error getting tree: ", err)
+	}
+
+	fmt.Println("Tree hash:", tree.Hash)
+
+	for _, entry := range tree.Entries {
+		if entry.Mode != filemode.Dir {
+			continue
+		}
+
+		if entry.Name[0] >= 'A' && entry.Name[0] <= 'Z' {
+			// Not a category dir (rather a ports system dir)
+			continue
+		}
+
+		if entry.Name[0] == '.' {
+			// Not a category dir
+			continue
+		}
+
+		category := entry.Name
+
+		subTree, err := tree.Tree(category)
+
+		if err != nil {
+			log.Fatal("Unable to get subtee")
+		}
+
+		for _, subDir := range subTree.Entries {
+			if subDir.Mode != filemode.Dir {
+				continue
+			}
+
+			if subDir.Name[0] == '.' {
+				// Not a port dir
+				continue
+			}
+
+			port := subDir.Name
+
+			portName := types.PortName{
+				Category: category,
+				Name:     port,
+			}
+
+			ports[portName] = PortAdded
+		}
 	}
 
 	return ports
