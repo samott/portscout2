@@ -47,9 +47,14 @@ func main() {
 	var headHash string
 
 	if lastCommitHash == "" {
-		headHash, ports = repo.FindAllPorts(cfg.Tree.PortsDir)
+		headHash, ports, err = repo.FindAllPorts(cfg.Tree.PortsDir)
 	} else {
-		headHash, ports = repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
+		headHash, ports, err = repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
+	}
+
+	if err != nil {
+		slog.Error("Failed to query ports repo", "err", err)
+		os.Exit(1)
 	}
 
 	slog.Info("Ports", "ports", ports)

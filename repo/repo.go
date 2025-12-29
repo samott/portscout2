@@ -2,7 +2,6 @@ package repo
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	git "github.com/go-git/go-git/v6"
@@ -43,31 +42,31 @@ func getPortName(path string) (*types.PortName, bool) {
 	return &portName, isRoot
 }
 
-func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.PortName]PortChange) {
+func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.PortName]PortChange, error) {
 	portsTree, err := git.PlainOpen(portsDir)
 
 	ports := make(map[types.PortName]PortChange)
 
 	if err != nil {
-		log.Fatal("Unable to open ports tree: ", err)
+		return "", nil, fmt.Errorf("Unable to open ports tree: %w", err)
 	}
 
 	head, err := portsTree.Head()
 
 	if err != nil {
-		log.Fatal("Unable to get HEAD: ", err)
+		return "", nil, fmt.Errorf("Unable to get HEAD: %w", err)
 	}
 
 	commit, err := portsTree.CommitObject(head.Hash())
 
 	if err != nil {
-		log.Fatal("Unable to find commit: ", err)
+		return "", nil, fmt.Errorf("Unable to find commit: %w", err)
 	}
 
 	tree, err := commit.Tree()
 
 	if err != nil {
-		log.Fatal("Error getting tree: ", err)
+		return "", nil, fmt.Errorf("Error getting tree: %w", err)
 	}
 
 	fmt.Println("Tree hash:", tree.Hash)
@@ -77,19 +76,19 @@ func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.P
 	lastCommit, err := portsTree.CommitObject(lastCommitHash)
 
 	if err != nil {
-		log.Fatal("Unable to find commit: ", err)
+		return "", nil, fmt.Errorf("Unable to find commit: %w", err)
 	}
 
 	lastTree, err := lastCommit.Tree()
 
 	if err != nil {
-		log.Fatal("Error getting tree: ", err)
+		return "", nil, fmt.Errorf("Error getting tree: %w", err)
 	}
 
 	changes, err := lastTree.Diff(tree)
 
 	if err != nil {
-		log.Fatal("Tree diff failed: ", err)
+		return "", nil, fmt.Errorf("Tree diff failed: %w", err)
 	}
 
 	for _, change := range changes {
@@ -176,37 +175,35 @@ func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.P
 		}
 	}
 
-	return tree.Hash.String(), ports
+	return tree.Hash.String(), ports, nil
 }
 
-func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange) {
+func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange, error) {
 	portsTree, err := git.PlainOpen(portsDir)
 
 	ports := make(map[types.PortName]PortChange)
 
 	if err != nil {
-		log.Fatal("Unable to open ports tree: ", err)
+		return "", nil, fmt.Errorf("Unable to open ports tree: %w", err)
 	}
 
 	head, err := portsTree.Head()
 
 	if err != nil {
-		log.Fatal("Unable to get HEAD: ", err)
+		return "", nil, fmt.Errorf("Unable to get HEAD: %w", err)
 	}
 
 	commit, err := portsTree.CommitObject(head.Hash())
 
 	if err != nil {
-		log.Fatal("Unable to find commit: ", err)
+		return "", nil, fmt.Errorf("Unable to find commit: %w", err)
 	}
 
 	tree, err := commit.Tree()
 
 	if err != nil {
-		log.Fatal("Error getting tree: ", err)
+		return "", nil, fmt.Errorf("Error getting tree: %w", err)
 	}
-
-	fmt.Println("Tree hash:", tree.Hash)
 
 	for _, entry := range tree.Entries {
 		if entry.Mode != filemode.Dir {
@@ -228,7 +225,7 @@ func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange) {
 		subTree, err := tree.Tree(category)
 
 		if err != nil {
-			log.Fatal("Unable to get subtee")
+			return "", nil, fmt.Errorf("Unable to get subtree: %w", err)
 		}
 
 		for _, subDir := range subTree.Entries {
@@ -252,5 +249,5 @@ func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange) {
 		}
 	}
 
-	return tree.Hash.String(), ports
+	return tree.Hash.String(), ports, nil
 }
