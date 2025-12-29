@@ -33,28 +33,50 @@ func main() {
 		os.Exit(1)
 	}
 
-	ports := repo.FindUpdated(cfg.Tree.PortsDir, "b700f9a18a81834a7e5c2046cda87c290bfa229a")
+	// Stage 1: sync the database from repo and ports tree
+
+	lastCommitHash, err := db.GetLastCommit()
+
+	if err != nil {
+		slog.Error("Failed to get last commit hash")
+		os.Exit(1)
+	}
+
+	ports := repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
 
 	slog.Info("Ports", "ports", ports)
 
 	tr := tree.NewTree(cfg.Tree.MakeCmd, cfg.Tree.PortsDir, cfg.Tree.MakeThreads)
 
-	go tr.QueryPorts()
+	if len(ports) > 0 {
+		go tr.QueryPorts()
 
-	go func() {
-		for name, change := range ports {
-			if change == repo.PortRemoved {
-				db.RemovePort(name)
-			} else {
-				tr.In() <- tree.QueryJob{Port: name}
+		go func() {
+			for name, change := range ports {
+				if change == repo.PortRemoved {
+					db.RemovePort(name)
+				} else {
+					tr.In() <- tree.QueryJob{Port: name}
+				}
+			}
+			close(tr.In())
+		}()
+
+		for port := range tr.Out() {
+			if port.Err == nil {
+				db.UpdatePort(port.Info)
 			}
 		}
-		close(tr.In())
-	}()
-
-	for port := range tr.Out() {
-		if port.Err == nil {
-			slog.Info("Port", "info", port.Info)
-		}
 	}
+
+	err = db.SetLastCommit(lastCommitHash)
+
+	if err != nil {
+		slog.Error("Failed to set last commit hash")
+		os.Exit(1)
+	}
+
+	// Stage 2: find updates
+
+	// ...
 }
