@@ -43,7 +43,7 @@ func getPortName(path string) (*types.PortName, bool) {
 	return &portName, isRoot
 }
 
-func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]PortChange {
+func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.PortName]PortChange) {
 	portsTree, err := git.PlainOpen(portsDir)
 
 	ports := make(map[types.PortName]PortChange)
@@ -176,10 +176,10 @@ func FindUpdated(portsDir string, lastCommitHashStr string) map[types.PortName]P
 		}
 	}
 
-	return ports
+	return tree.Hash.String(), ports
 }
 
-func FindAllPorts(portsDir string) map[types.PortName]PortChange {
+func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange) {
 	portsTree, err := git.PlainOpen(portsDir)
 
 	ports := make(map[types.PortName]PortChange)
@@ -252,5 +252,5 @@ func FindAllPorts(portsDir string) map[types.PortName]PortChange {
 		}
 	}
 
-	return ports
+	return tree.Hash.String(), ports
 }

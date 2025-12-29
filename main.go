@@ -44,11 +44,12 @@ func main() {
 	}
 
 	var ports map[types.PortName]repo.PortChange
+	var headHash string
 
 	if lastCommitHash == "" {
-		ports = repo.FindAllPorts(cfg.Tree.PortsDir)
+		headHash, ports = repo.FindAllPorts(cfg.Tree.PortsDir)
 	} else {
-		ports = repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
+		headHash, ports = repo.FindUpdated(cfg.Tree.PortsDir, lastCommitHash)
 	}
 
 	slog.Info("Ports", "ports", ports)
@@ -76,7 +77,7 @@ func main() {
 		}
 	}
 
-	err = db.SetLastCommit(lastCommitHash)
+	err = db.SetLastCommit(headHash)
 
 	if err != nil {
 		slog.Error("Failed to set last commit hash")
