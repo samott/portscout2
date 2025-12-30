@@ -2,8 +2,11 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
@@ -15,6 +18,17 @@ import (
 type DB struct {
 	db  *sql.DB
 	gdb *goqu.Database
+}
+
+type portEntry struct {
+	Name       string
+	Version    string
+	NewVersion *string `db:"newVersion"`
+	Category   string
+	CheckedAt  *time.Time `db:"checkedAt"`
+	UpdatedAt  *time.Time `db:"updatedAt"`
+	Maintainer string
+	GitHub     *string `db:"gitHub"`
 }
 
 func NewDB(dbUrl string) (*DB, error) {
@@ -39,10 +53,25 @@ func (db *DB) Close() {
 func (db *DB) UpdatePort(port types.PortInfo) error {
 	slog.Info("Updating port", "port", port.Name)
 
+	var github *string
+
+	if port.GitHub != nil {
+		ghbytes, err := json.Marshal(port.GitHub)
+		if err != nil {
+			return fmt.Errorf("Unable to marshal GitHub field to JSON: %w", err)
+		}
+		ghstring := string(ghbytes)
+		github = &ghstring
+	} else {
+		github = nil
+	}
+
 	query := db.gdb.Insert("ports").Rows(goqu.Record{
-		"name":     port.Name.Name,
-		"category": port.Name.Category,
-		"version":  port.DistVersion,
+		"name":       port.Name.Name,
+		"category":   port.Name.Category,
+		"version":    port.DistVersion,
+		"maintainer": port.Maintainer,
+		"gitHub":     github,
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
 		goqu.Record{
@@ -99,6 +128,45 @@ func (db *DB) RemovePorts(ports []types.PortName) error {
 	}
 
 	return nil
+}
+
+func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
+	query := db.gdb.From("ports").Limit(limit).Offset(offset).Prepared(true)
+
+	var rows []portEntry
+
+	ports := make([]types.PortInfo, 0, limit)
+
+	err := query.ScanStructs(&rows)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error while scanning structs: %w", err)
+	}
+
+	for _, row := range rows {
+		var github *types.GitHubInfo
+
+		if row.GitHub != nil {
+			err := json.Unmarshal([]byte(*row.GitHub), &github)
+
+			if err != nil {
+				return nil, fmt.Errorf("Error while unmarshalling GitHub JSON: %w", err)
+			}
+		} else {
+			github = nil
+		}
+
+		ports = append(ports, types.PortInfo{
+			Name: types.PortName{
+				Category: row.Category,
+				Name:     row.Name,
+			},
+			Maintainer: row.Maintainer,
+			GitHub:     github,
+		})
+	}
+
+	return ports, nil
 }
 
 func (db *DB) GetLastCommit() (string, error) {
