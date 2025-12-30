@@ -5,6 +5,13 @@ type PortName struct {
 	Name     string
 }
 
+type GitHubInfo struct {
+	Account string `json:"account"`
+	Project string `json:"project"`
+	TagName string `json:"tagName"`
+	SubDir  string `json:"account"`
+}
+
 type PortInfo struct {
 	Name             PortName
 	DistName         string
@@ -18,6 +25,7 @@ type PortInfo struct {
 	Portscout        string
 	Maintainer       string
 	Comment          string
+	GitHub           *GitHubInfo
 }
 
 func (p PortName) String() string {

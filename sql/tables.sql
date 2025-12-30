@@ -6,6 +6,7 @@ CREATE TABLE "ports" (
 	"checkedAt" timestamp,
 	"updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"maintainer" text NOT NULL,
+	"gitHub" text,
 	UNIQUE ("category", "name")
 );
 

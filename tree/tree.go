@@ -54,7 +54,8 @@ func (tree *Tree) QueryPorts() {
 	queryVars := []string{
 		"DISTNAME", "DISTVERSION", "DISTFILES", "EXTRACT_SUFX", "MASTER_SITES",
 		"MASTER_SITE_SUBDIR", "SLAVE_PORT", "MASTER_PORT", "PORTSCOUT",
-		"MAINTAINER", "COMMENT",
+		"MAINTAINER", "COMMENT", "USE_GITHUB", "GH_ACCOUNT", "GH_PROJECT",
+		"GH_TAGNAME", "GH_SUBDIR",
 	}
 
 	for job := range tree.in {
@@ -105,6 +106,19 @@ func (tree *Tree) QueryPorts() {
 			files := strings.Split(lines[3], " ")
 			sites := strings.Split(lines[4], " ")
 
+			var github *types.GitHubInfo
+
+			if lines[11] != "" {
+				github = &types.GitHubInfo{
+					Account: lines[12],
+					Project: lines[13],
+					TagName: lines[14],
+					SubDir:  lines[15],
+				}
+			} else {
+				github = nil
+			}
+
 			tree.out <- QueryResult{
 				Info: types.PortInfo{
 					Name:             port,
@@ -119,6 +133,7 @@ func (tree *Tree) QueryPorts() {
 					Portscout:        lines[8],
 					Maintainer:       lines[9],
 					Comment:          lines[10],
+					GitHub:           github,
 				},
 				Err: nil,
 			}
