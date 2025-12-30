@@ -1,11 +1,11 @@
 CREATE TABLE "ports" (
-	"name" text,
-	"version" text,
-	"newVersion" text,
-	"category" text,
+	"name" text NOT NULL,
+	"version" text NOT NULL,
+	"newVersion" text NOT NULL,
+	"category" text NOT NULL,
 	"checkedAt" timestamp,
 	"updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
-	"maintainer" text,
+	"maintainer" text NOT NULL,
 	UNIQUE ("category", "name")
 );
 
