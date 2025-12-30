@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	"context"
 	"log/slog"
 
 	"github.com/samott/portscout2/config"
@@ -39,7 +40,7 @@ func main() {
 	lastCommitHash, err := db.GetLastCommit()
 
 	if err != nil {
-		slog.Error("Failed to get last commit hash")
+		slog.Error("Failed to get last commit hash", "err", err)
 		os.Exit(1)
 	}
 
@@ -60,14 +61,21 @@ func main() {
 	slog.Info("Ports", "ports", ports)
 
 	tr := tree.NewTree(cfg.Tree.MakeCmd, cfg.Tree.PortsDir, cfg.Tree.MakeThreads)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	if len(ports) > 0 {
-		go tr.QueryPorts()
+		go tr.QueryPorts(ctx)
 
 		go func() {
 			for name, change := range ports {
 				if change == repo.PortRemoved {
-					db.RemovePort(name)
+					err := db.RemovePort(name)
+
+					if err != nil {
+						slog.Error("Error removing database entry", "err", err)
+						cancel()
+						break
+					}
 				} else {
 					tr.In() <- tree.QueryJob{Port: name}
 				}
@@ -77,15 +85,26 @@ func main() {
 
 		for port := range tr.Out() {
 			if port.Err == nil {
-				db.UpdatePort(port.Info)
+				err := db.UpdatePort(port.Info)
+
+				if err != nil {
+					slog.Error("Error updating database entry", "err", err)
+					cancel()
+					break
+				}
 			}
 		}
+	}
+
+	if ctx.Err != nil {
+		slog.Error("Aborting due to context error")
+		os.Exit(1)
 	}
 
 	err = db.SetLastCommit(headHash)
 
 	if err != nil {
-		slog.Error("Failed to set last commit hash")
+		slog.Error("Failed to set last commit hash", "err", err)
 		os.Exit(1)
 	}
 

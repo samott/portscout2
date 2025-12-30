@@ -2,6 +2,7 @@ package tree
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -48,7 +49,7 @@ func (c *Tree) Out() <-chan QueryResult {
 	return c.out
 }
 
-func (tree *Tree) QueryPorts() {
+func (tree *Tree) QueryPorts(ctx context.Context) {
 	var wg sync.WaitGroup
 
 	queryVars := []string{
@@ -59,6 +60,12 @@ func (tree *Tree) QueryPorts() {
 	}
 
 	for job := range tree.in {
+		if ctx.Err() != nil {
+			wg.Wait()
+			close(tree.out)
+			return
+		}
+
 		port := job.Port
 
 		wg.Add(1)
