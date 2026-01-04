@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -21,14 +22,15 @@ type DB struct {
 }
 
 type portEntry struct {
-	Name       string
-	Version    string
-	NewVersion *string `db:"newVersion"`
-	Category   string
-	CheckedAt  *time.Time `db:"checkedAt"`
-	UpdatedAt  *time.Time `db:"updatedAt"`
-	Maintainer string
-	GitHub     *string `db:"gitHub"`
+	Name        string
+	Version     string
+	NewVersion  *string `db:"newVersion"`
+	Category    string
+	CheckedAt   *time.Time `db:"checkedAt"`
+	UpdatedAt   *time.Time `db:"updatedAt"`
+	Maintainer  string
+	MasterSites string  `db:"masterSites"`
+	GitHub      *string `db:"gitHub"`
 }
 
 func NewDB(dbUrl string) (*DB, error) {
@@ -66,12 +68,15 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		github = nil
 	}
 
+	masterSites := strings.Join(port.MasterSites, " ")
+
 	query := db.gdb.Insert("ports").Rows(goqu.Record{
-		"name":       port.Name.Name,
-		"category":   port.Name.Category,
-		"version":    port.DistVersion,
-		"maintainer": port.Maintainer,
-		"gitHub":     github,
+		"name":        port.Name.Name,
+		"category":    port.Name.Category,
+		"version":     port.DistVersion,
+		"maintainer":  port.Maintainer,
+		"masterSites": masterSites,
+		"gitHub":      github,
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
 		goqu.Record{
@@ -156,13 +161,16 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			github = nil
 		}
 
+		masterSites := strings.Split(row.MasterSites, " ")
+
 		ports = append(ports, types.PortInfo{
 			Name: types.PortName{
 				Category: row.Category,
 				Name:     row.Name,
 			},
-			Maintainer: row.Maintainer,
-			GitHub:     github,
+			Maintainer:  row.Maintainer,
+			MasterSites: masterSites,
+			GitHub:      github,
 		})
 	}
 
