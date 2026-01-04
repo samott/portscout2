@@ -8,6 +8,7 @@ import (
 type Config struct {
 	Db struct {
 		Url string `yaml:"url"`
+		PageSize uint `yaml:"pageSize"`
 	} `yaml:"db"`
 
 	Tree struct {

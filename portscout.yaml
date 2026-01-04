@@ -5,3 +5,4 @@ tree:
 
 db:
   url: "postgres://postgres:postgres@localhost/portscout?sslmode=disable"
+  pageSize: 10
