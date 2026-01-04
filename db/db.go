@@ -161,7 +161,7 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			github = nil
 		}
 
-		masterSites := strings.Split(row.MasterSites, " ")
+		masterSites := strings.Fields(row.MasterSites)
 
 		ports = append(ports, types.PortInfo{
 			Name: types.PortName{
