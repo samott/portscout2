@@ -69,8 +69,6 @@ func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.P
 		return "", nil, fmt.Errorf("Error getting tree: %w", err)
 	}
 
-	fmt.Println("Tree hash:", tree.Hash)
-
 	lastCommitHash := plumbing.NewHash(lastCommitHashStr)
 
 	lastCommit, err := portsTree.CommitObject(lastCommitHash)
