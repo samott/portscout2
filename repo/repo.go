@@ -74,7 +74,7 @@ func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.P
 	lastCommit, err := portsTree.CommitObject(lastCommitHash)
 
 	if err != nil {
-		return "", nil, fmt.Errorf("Unable to find commit: %w", err)
+		return "", nil, fmt.Errorf("Unable to find last commit: %w", err)
 	}
 
 	lastTree, err := lastCommit.Tree()
@@ -173,7 +173,7 @@ func FindUpdated(portsDir string, lastCommitHashStr string) (string, map[types.P
 		}
 	}
 
-	return tree.Hash.String(), ports, nil
+	return commit.Hash.String(), ports, nil
 }
 
 func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange, error) {
