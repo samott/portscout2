@@ -249,5 +249,5 @@ func FindAllPorts(portsDir string) (string, map[types.PortName]PortChange, error
 		}
 	}
 
-	return tree.Hash.String(), ports, nil
+	return commit.Hash.String(), ports, nil
 }
