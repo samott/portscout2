@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -30,6 +29,7 @@ type portEntry struct {
 	UpdatedAt   *time.Time `db:"updatedAt"`
 	Maintainer  string
 	MasterSites string  `db:"masterSites"`
+	DistFiles   string  `db:"distFiles"`
 	GitHub      *string `db:"gitHub"`
 }
 
@@ -68,7 +68,8 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		github = nil
 	}
 
-	masterSites := strings.Join(port.MasterSites, " ")
+	masterSites := types.MarshalTaggedLists(port.MasterSites)
+	distFiles := types.MarshalTaggedLists(port.DistFiles)
 
 	query := db.gdb.Insert("ports").Rows(goqu.Record{
 		"name":        port.Name.Name,
@@ -76,6 +77,7 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		"version":     port.DistVersion,
 		"maintainer":  port.Maintainer,
 		"masterSites": masterSites,
+		"distFiles":   distFiles,
 		"gitHub":      github,
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
@@ -161,7 +163,8 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			github = nil
 		}
 
-		masterSites := strings.Fields(row.MasterSites)
+		masterSites := types.UnmarshalTaggedLists(row.MasterSites)
+		distFiles := types.UnmarshalTaggedLists(row.DistFiles)
 
 		ports = append(ports, types.PortInfo{
 			Name: types.PortName{
@@ -170,6 +173,7 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			},
 			Maintainer:  row.Maintainer,
 			MasterSites: masterSites,
+			DistFiles:   distFiles,
 			GitHub:      github,
 		})
 	}
