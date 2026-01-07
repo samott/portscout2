@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var siteGroupSuffix = regexp.MustCompile(`:([A-Za-z0-9][A-Za-z0-9,]*)$`)
+var siteGroupSuffix = regexp.MustCompile(`:([A-Za-z0-9_][A-Za-z0-9_,]*)$`)
 
 type PortName struct {
 	Category string
