@@ -111,7 +111,7 @@ func (tree *Tree) QueryPorts(ctx context.Context) {
 			lines := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")
 
 			ms_subdir := lines[5]
-			files := types.UnmarshalTaggedLists(lines[3]);
+			files := types.UnmarshalTaggedLists(lines[2]);
 			sites := types.UnmarshalTaggedLists(strings.ReplaceAll(lines[4], "%SUBDIR%", ms_subdir))
 
 			var github *types.GitHubInfo
