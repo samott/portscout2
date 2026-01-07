@@ -22,7 +22,7 @@ type GitHubInfo struct {
 }
 
 type TaggedList struct {
-	items []string
+	Items []string
 }
 
 type PortInfo struct {
@@ -83,10 +83,10 @@ func UnmarshalTaggedLists(str string) map[string]*TaggedList {
 
 			if !exists {
 				listsByTag[tag] = &TaggedList{
-					items: []string{url},
+					Items: []string{url},
 				}
 			} else {
-				listsByTag[tag].items = append(listsByTag[tag].items, url)
+				listsByTag[tag].Items = append(listsByTag[tag].Items, url)
 			}
 		}
 	}
@@ -105,7 +105,7 @@ func MarshalTaggedLists(list map[string]*TaggedList) string {
 	tags := slices.Sorted(maps.Keys(list))
 
 	for _, tag := range tags {
-		for _, item := range list[tag].items {
+		for _, item := range list[tag].Items {
 			if tag == "" {
 				arr = append(arr, item)
 			} else {

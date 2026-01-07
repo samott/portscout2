@@ -27,15 +27,15 @@ func TestUnmarshalTaggedLists(t *testing.T) {
 		t.Fatal("Missing tag: tag3")
 	}
 
-	if len(result["tag1"].items) != 2 {
+	if len(result["tag1"].Items) != 2 {
 		t.Fatal("Incorrect item count for tag1")
 	}
 
-	if len(result["tag2"].items) != 1 {
+	if len(result["tag2"].Items) != 1 {
 		t.Fatal("Incorrect item count for tag2")
 	}
 
-	if len(result["tag3"].items) != 1 {
+	if len(result["tag3"].Items) != 1 {
 		t.Fatal("Incorrect item count for tag3")
 	}
 }
@@ -43,23 +43,23 @@ func TestUnmarshalTaggedLists(t *testing.T) {
 func TestMarshalTaggedLists(t *testing.T) {
 	input := map[string]*TaggedList{
 		"tag1": &TaggedList{
-			items: []string{
+			Items: []string{
 				"http://www.example.net",
 				"http://www.example.com",
 			},
 		},
 		"tag2": &TaggedList{
-			items: []string{
+			Items: []string{
 				"http://www.example.org",
 			},
 		},
 		"tag3": &TaggedList{
-			items: []string{
+			Items: []string{
 				"http://www.example.org",
 			},
 		},
 		"": &TaggedList{
-			items: []string{
+			Items: []string{
 				"http://www.microsoft.com",
 			},
 		},
