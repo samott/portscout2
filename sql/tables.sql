@@ -7,6 +7,7 @@ CREATE TABLE "ports" (
 	"updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"maintainer" text NOT NULL,
 	"masterSites" text NOT NULL,
+	"distFiles" text NOT NULL,
 	"gitHub" text,
 	UNIQUE ("category", "name")
 );
