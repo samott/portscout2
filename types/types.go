@@ -81,6 +81,11 @@ func UnmarshalTaggedLists(str string) map[string]*TaggedList {
 		for _, tag := range tags {
 			_, exists := listsByTag[tag]
 
+			// Skip special (e.g. cargo) tags
+			if len(tag) > 0 && tag[0] == '_' {
+				continue
+			}
+
 			if !exists {
 				listsByTag[tag] = &TaggedList{
 					Items: []string{url},
@@ -106,6 +111,11 @@ func MarshalTaggedLists(list map[string]*TaggedList) string {
 
 	for _, tag := range tags {
 		for _, item := range list[tag].Items {
+			// Skip special (e.g. cargo) tags
+			if len(tag) > 0 && tag[0] == '_' {
+				continue
+			}
+
 			if tag == "" {
 				arr = append(arr, item)
 			} else {

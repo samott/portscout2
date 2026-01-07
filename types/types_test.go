@@ -5,7 +5,7 @@ import (
 )
 
 func TestUnmarshalTaggedLists(t *testing.T) {
-	result := UnmarshalTaggedLists("http://x.com/:tag1,tag2 http://y.com/:tag1 http://z.com/:tag3 http://q.com")
+	result := UnmarshalTaggedLists("http://x.com/:tag1,tag2 http://y.com/:tag1 http://z.com/:tag3 http://q.com http://fake.com:_cargo")
 
 	if len(result) != 4 {
 		t.Fatal("Incorrect tag count")
@@ -54,6 +54,11 @@ func TestMarshalTaggedLists(t *testing.T) {
 			},
 		},
 		"tag3": &TaggedList{
+			Items: []string{
+				"http://www.example.org",
+			},
+		},
+		"_cargo": &TaggedList{
 			Items: []string{
 				"http://www.example.org",
 			},
