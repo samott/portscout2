@@ -28,6 +28,7 @@ type CrawlLimiterInterface interface {
 type CrawlJob struct {
 	Port types.PortInfo
 	Site *url.URL
+	File string
 }
 
 type CrawlResult struct {

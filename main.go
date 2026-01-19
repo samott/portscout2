@@ -5,10 +5,17 @@ import (
 	"os"
 
 	"context"
+	"crypto/rand"
 	"log/slog"
+	"math/big"
+	"net/url"
+	"time"
 
 	"github.com/samott/portscout2/config"
+	"github.com/samott/portscout2/crawl_limiter"
+	"github.com/samott/portscout2/crawler"
 	"github.com/samott/portscout2/db"
+	"github.com/samott/portscout2/db_pager"
 	"github.com/samott/portscout2/repo"
 	"github.com/samott/portscout2/tree"
 	"github.com/samott/portscout2/types"
@@ -58,8 +65,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("Ports", "ports", ports)
-
 	tr := tree.NewTree(cfg.Tree.MakeCmd, cfg.Tree.PortsDir, cfg.Tree.MakeThreads)
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -96,8 +101,8 @@ func main() {
 		}
 	}
 
-	if ctx.Err != nil {
-		slog.Error("Aborting due to context error")
+	if ctx.Err() != nil {
+		slog.Error("Aborting due to context error", "err", ctx.Err())
 		os.Exit(1)
 	}
 
@@ -110,5 +115,42 @@ func main() {
 
 	// Stage 2: find updates
 
-	// ...
+	crawl_lim := crawl_limiter.NewCrawlLimiter(cfg.CrawlLimiter.MaxReqsCount, time.Duration(cfg.CrawlLimiter.MaxReqsWindowMs)*time.Millisecond)
+	crawl := crawler.NewCrawler(cfg.Crawler.QueueSize)
+	crawl.SetLimiter(crawl_lim)
+
+	pager := db_pager.NewPager[types.PortInfo](db.GetPorts, cfg.Db.PageSize)
+
+	go pager.Run(ctx)
+
+	for port := range pager.Out() {
+		for group := range port.DistFiles {
+			if _, ok := port.MasterSites[group]; !ok {
+				// No sites for this distfile
+				continue
+			}
+
+			randInt, _ := rand.Int(rand.Reader, big.NewInt(int64(len(port.MasterSites[group].Items))))
+			idx := randInt.Int64()
+			site, err := url.Parse(port.MasterSites[group].Items[idx])
+
+			if err != nil {
+				// XXX
+				slog.Error("Error", "err", err)
+				break
+			}
+
+			file := port.DistFiles[group].Items[0]
+
+			crawl.In() <- crawler.CrawlJob{
+				Port: port,
+				Site: site,
+				File: file,
+			}
+		}
+	}
+
+	for result := range crawl.Out() {
+		slog.Info("Crawl result", "result", result)
+	}
 }

@@ -16,6 +16,15 @@ type Config struct {
 		MakeCmd     string `yaml:"makeCmd"`
 		MakeThreads int    `yaml:"makeThreads"`
 	} `yaml:"tree"`
+
+	Crawler struct {
+		QueueSize int `yaml:"queueSize"`
+	} `yaml:"crawler"`
+
+	CrawlLimiter struct {
+		MaxReqsCount    int `yaml:"maxReqsCount"`
+		MaxReqsWindowMs int `yaml:"maxReqsWindowMs"`
+	} `yaml:"crawlLimiter"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {

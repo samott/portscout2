@@ -6,3 +6,10 @@ tree:
 db:
   url: "postgres://postgres:postgres@localhost/portscout?sslmode=disable"
   pageSize: 10
+
+crawler:
+  queueSize: 10
+
+crawlLimiter:
+  maxReqsCount: 5
+  maxReqsWindowMs: 1000
