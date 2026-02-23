@@ -179,6 +179,7 @@ func (c *Crawler) crawlHttp(port types.PortInfo, site *url.URL) ([]*url.URL, err
 	}
 
 	req.Header.Set("User-Agent", "portscout/2")
+	req.Header.Set("Content-Type", "text/html")
 
 	client := &http.Client{}
 
