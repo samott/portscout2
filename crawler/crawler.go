@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"io"
 	"fmt"
 	"net/url"
+	"net/http"
 	"sync"
 	"time"
 
@@ -63,6 +65,22 @@ func (c *Crawler) Run() {
 	var wg sync.WaitGroup
 
 	for r := range c.in {
+		if r.Site.Scheme == "http" {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				files, err := c.crawlHttp(r.Port, r.Site)
+				c.out <- CrawlResult{
+					Port:  r.Port.Name,
+					Site:  r.Site,
+					Files: files,
+					Err:   err,
+				}
+			}()
+			continue
+		}
+
 		if r.Site.Scheme == "ftp" {
 			wg.Add(1)
 			go func() {
@@ -78,6 +96,7 @@ func (c *Crawler) Run() {
 			}()
 			continue
 		}
+
 
 		// No suitable handler found
 		c.out <- CrawlResult{
@@ -142,6 +161,40 @@ func (c *Crawler) crawlFtp(port types.PortInfo, site *url.URL) ([]*url.URL, erro
 
 		files = append(files, fileUrl)
 	}
+
+	return files, nil
+}
+
+func (c *Crawler) crawlHttp(port types.PortInfo, site *url.URL) ([]*url.URL, error) {
+	files := make([]*url.URL, 0)
+
+	if c.limiter != nil {
+		c.limiter.Wait(site, context.Background())
+	}
+
+	req, err := http.NewRequest("GET", site.String(), nil);
+
+	if err != nil {
+		return nil, fmt.Errorf("Error creating request: %w", err)
+	}
+
+	req.Header.Set("User-Agent", "portscout/2")
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error making request: %w", err)
+	}
+
+	if resp.StatusCode > 299 {
+		return nil, fmt.Errorf("Request not successful: %s", resp.Status)
+	}
+
+	defer resp.Body.Close()
+
+	_, _ = io.ReadAll(resp.Body)
 
 	return files, nil
 }
