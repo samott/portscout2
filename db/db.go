@@ -31,6 +31,7 @@ type portEntry struct {
 	MasterSites string  `db:"masterSites"`
 	DistFiles   string  `db:"distFiles"`
 	GitHub      *string `db:"gitHub"`
+	IndexSite   string  `db:"indexSite"`
 }
 
 func NewDB(dbUrl string) (*DB, error) {
@@ -79,6 +80,7 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		"masterSites": masterSites,
 		"distFiles":   distFiles,
 		"gitHub":      github,
+		"indexSite":   port.IndexSite,
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
 		goqu.Record{
@@ -175,6 +177,7 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			MasterSites: masterSites,
 			DistFiles:   distFiles,
 			GitHub:      github,
+			IndexSite:   row.IndexSite,
 		})
 	}
 

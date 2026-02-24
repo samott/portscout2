@@ -39,6 +39,7 @@ type PortInfo struct {
 	Maintainer       string
 	Comment          string
 	GitHub           *GitHubInfo
+	IndexSite        string
 }
 
 func (p PortName) String() string {
