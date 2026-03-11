@@ -9,6 +9,7 @@ CREATE TABLE "ports" (
 	"masterSites" text NOT NULL,
 	"distFiles" text NOT NULL,
 	"gitHub" text,
+	"indexSite" text NOT NULL,
 	UNIQUE ("category", "name")
 );
 
