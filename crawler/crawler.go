@@ -97,7 +97,6 @@ func (c *Crawler) Run() {
 			continue
 		}
 
-
 		// No suitable handler found
 		c.out <- CrawlResult{
 			Port:  r.Port.Name,
@@ -110,6 +109,30 @@ func (c *Crawler) Run() {
 	wg.Wait()
 	close(c.out)
 }
+
+/*
+func (c *Crawler) getVersionRootFromPath(port types.PortInfo, site *url.URL) (string) {
+	segments := strings.Split(u.Path, "/")
+
+	// We are looking to see if a major version is embedded in the path,
+	// e.g. http://example.net/4.3/releases/file-4.3.2.zip so that when
+	// we access the URL we can update this instance of the version.
+	// We can handle multiple copies of the version, including different
+	// levels of truncation (4.3.2, 4.3) but we'll make the assumption
+	// that the first instance is the shortest (most "major" number).
+	for segment := range segments {
+		if len(segment) == 0 {
+			continue
+		}
+
+		if strings.ContainsRune(segment, '.') && strings.HasPrefix(port.Version, segment) {
+			return segment;
+		}
+	}
+
+	return "";
+}
+*/
 
 func (c *Crawler) crawlFtp(port types.PortInfo, site *url.URL) ([]*url.URL, error) {
 	files := make([]*url.URL, 0)
