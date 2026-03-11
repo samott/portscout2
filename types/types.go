@@ -21,6 +21,16 @@ type GitHubInfo struct {
 	SubDir  string `json:"account"`
 }
 
+type PortConfig struct {
+	IndexSite string
+	LimitVer string
+	LimitEven string
+	LimitWhich int
+	SkipBeta bool
+	SkipVersions []string
+	Ignore bool
+}
+
 type TaggedList struct {
 	Items []string
 }
