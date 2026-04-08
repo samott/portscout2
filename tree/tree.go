@@ -8,6 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"net/url"
+	"log/slog"
+	"regexp"
+	"strconv"
+	"errors"
 
 	"github.com/samott/portscout2/types"
 )
@@ -28,6 +33,109 @@ type QueryJob struct {
 type QueryResult struct {
 	Info types.PortInfo
 	Err  error
+}
+
+func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
+	vars := strings.Fields(portscoutStr)
+
+	vmap := make(map[string]string);
+
+	for _, pair := range vars {
+		vals := strings.SplitN(pair, "=", 2);
+
+		vmap[vals[0]] = vals[1];
+	}
+
+	cfg := types.PortConfig{
+		IndexSite: nil,
+		LimitVer: nil,
+		LimitEven: false,
+		LimitWhich: 0,
+		SkipBeta: true,
+		SkipVersions: make([]string, 0),
+		Ignore: false,
+	};
+
+	if val, ok := vmap["site"]; ok {
+		if u, err := url.ParseRequestURI(val); err != nil {
+			cfg.IndexSite = u;
+		} else {
+			slog.Warn("Invalid site value in PORTSCOUT variable; ignoring", "site", val);
+		}
+	}
+
+	if val, ok := vmap["limit"]; ok {
+		if re, err := regexp.Compile(val); err != nil {
+			cfg.LimitVer = re;
+		} else {
+			slog.Warn("Invalid limit value in PORTSCOUT variable; ignoring", "limit", val);
+		}
+	}
+
+	if val, ok := vmap["limitw"]; ok {
+		vals := strings.SplitN(val, ",", 2)
+
+		which, even, err := (func() (int, bool, error) {
+			even := true;
+
+			if len(vals) != 2 {
+				return 0, even, errors.New("Invalid limitw tuple")
+			}
+
+			which, err := strconv.Atoi(vals[0])
+
+			if err != nil {
+				return which, even, errors.New("Invalid limitw index")
+			}
+
+			evenOdd := strings.ToLower(vals[1]);
+
+			if evenOdd == "even" {
+				even = true;
+			} else if evenOdd == "odd" {
+				even = false;
+			} else {
+				return which, even, errors.New("Invalid limitw parity");
+			}
+
+			return which, even, nil;
+		})();
+
+		if err == nil {
+			slog.Warn("Invalid limitw value in PORTSCOUT variable; ignoring", "limitw", val);
+		} else {
+			cfg.LimitWhich = which;
+			cfg.LimitEven = even;
+		}
+	}
+
+	if val, ok := vmap["ignore"]; ok {
+		if val == "1" || val == "true" || val == "yes" {
+			cfg.Ignore = true;
+		} else {
+			cfg.Ignore = false;
+		}
+	}
+
+	if val, ok := vmap["skipb"]; ok {
+		if val == "1" || val == "true" || val == "yes" {
+			cfg.SkipBeta = true;
+		} else {
+			cfg.SkipBeta = false;
+		}
+	}
+
+	if val, ok := vmap["skipv"]; ok {
+		vers := strings.Split(val, ",");
+
+		for _, ver := range vers {
+			if trimmed := strings.TrimSpace(ver); trimmed != "" {
+				cfg.SkipVersions = append(cfg.SkipVersions, trimmed);
+			}
+		}
+	}
+
+	return cfg, nil;
 }
 
 func NewTree(makeCmd string, portsDir string, maxProc int) *Tree {
@@ -125,6 +233,18 @@ func (tree *Tree) QueryPorts(ctx context.Context) {
 				}
 			} else {
 				github = nil
+			}
+
+			_, err = parsePortConfig(lines[8]);
+
+			if err != nil {
+				tree.out <- QueryResult{
+					Info: types.PortInfo{
+						Name: port,
+					},
+					Err: fmt.Errorf("PORTSCOUT value couldn't be parsed: %w", err),
+				}
+				return
 			}
 
 			tree.out <- QueryResult{

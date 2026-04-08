@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"net/url"
 )
 
 var siteGroupSuffix = regexp.MustCompile(`:([A-Za-z0-9_][A-Za-z0-9_,]*)$`)
@@ -22,9 +23,9 @@ type GitHubInfo struct {
 }
 
 type PortConfig struct {
-	IndexSite string
-	LimitVer string
-	LimitEven string
+	IndexSite *url.URL
+	LimitVer *regexp.Regexp
+	LimitEven bool
 	LimitWhich int
 	SkipBeta bool
 	SkipVersions []string
