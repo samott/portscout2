@@ -51,7 +51,7 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 	}
 
 	for _, pair := range vars {
-		vals := strings.SplitN(pair, "=", 2)
+		vals := strings.SplitN(pair, ":", 2)
 
 		if len(vals) != 2 {
 			return cfg, errors.New("Invalid tuple in PORTSCOUT variable")
@@ -61,7 +61,7 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 	}
 
 	if val, ok := vmap["site"]; ok {
-		if u, err := url.ParseRequestURI(val); err != nil {
+		if u, err := url.ParseRequestURI(val); err == nil {
 			cfg.IndexSite = u
 		} else {
 			slog.Warn("Invalid site value in PORTSCOUT variable; ignoring", "site", val)
@@ -69,7 +69,7 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 	}
 
 	if val, ok := vmap["limit"]; ok {
-		if re, err := regexp.Compile(val); err != nil {
+		if re, err := regexp.Compile(val); err == nil {
 			cfg.LimitVer = re
 		} else {
 			slog.Warn("Invalid limit value in PORTSCOUT variable; ignoring", "limit", val)
@@ -106,10 +106,10 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 		})()
 
 		if err == nil {
-			slog.Warn("Invalid limitw value in PORTSCOUT variable; ignoring", "limitw", val)
-		} else {
 			cfg.LimitWhich = which
 			cfg.LimitEven = even
+		} else {
+			slog.Warn("Invalid limitw value in PORTSCOUT variable; ignoring", "limitw", val)
 		}
 	}
 
