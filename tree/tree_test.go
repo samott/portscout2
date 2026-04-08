@@ -19,10 +19,6 @@ func TestParsePortConfig(t *testing.T) {
 		t.Fatal("Incorrect skipBeta value")
 	}
 
-	if result.SkipBeta {
-		t.Fatal("Incorrect skipBeta value")
-	}
-
 	if result.LimitWhich != 1 || result.LimitEven {
 		t.Fatal("Incorrect limitWhich values")
 	}
@@ -37,5 +33,39 @@ func TestParsePortConfig(t *testing.T) {
 
 	if result.SkipVersions[1] != "1.9" {
 		t.Fatal("Incorrect skipVersions parse (entry 1)")
+	}
+
+	if result.Ignore {
+		t.Fatal("Incorrect ignore value")
+	}
+
+	result2, err := parsePortConfig("skipb:true limitw:2,even skipv:2.234 ignore:true")
+
+	if err != nil {
+		t.Fatal("Port config parse error")
+	}
+
+	if result2.IndexSite != nil {
+		t.Fatal("Incorrect indexSite value")
+	}
+
+	if !result2.SkipBeta {
+		t.Fatal("Incorrect skipBeta value")
+	}
+
+	if result2.LimitWhich != 2 || !result2.LimitEven {
+		t.Fatal("Incorrect limitWhich values")
+	}
+
+	if len(result2.SkipVersions) != 1 {
+		t.Fatal("Incorrect skipVersions count")
+	}
+
+	if result2.SkipVersions[0] != "2.234" {
+		t.Fatal("Incorrect skipVersions parse (entry 0)")
+	}
+
+	if !result2.Ignore {
+		t.Fatal("Incorrect ignore value")
 	}
 }
