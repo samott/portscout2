@@ -3,16 +3,16 @@ package tree
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
+	"net/url"
 	"os/exec"
 	"path/filepath"
-	"strings"
-	"sync"
-	"net/url"
-	"log/slog"
 	"regexp"
 	"strconv"
-	"errors"
+	"strings"
+	"sync"
 
 	"github.com/samott/portscout2/types"
 )
@@ -38,37 +38,41 @@ type QueryResult struct {
 func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 	vars := strings.Fields(portscoutStr)
 
-	vmap := make(map[string]string);
+	vmap := make(map[string]string)
 
 	for _, pair := range vars {
-		vals := strings.SplitN(pair, "=", 2);
+		vals := strings.SplitN(pair, "=", 2)
 
-		vmap[vals[0]] = vals[1];
+		if len(vals) != 2 {
+			return cfg, errors.New("Invalid tuple in PORTSCOUT variable")
+		}
+
+		vmap[vals[0]] = vals[1]
 	}
 
 	cfg := types.PortConfig{
-		IndexSite: nil,
-		LimitVer: nil,
-		LimitEven: false,
-		LimitWhich: 0,
-		SkipBeta: true,
+		IndexSite:    nil,
+		LimitVer:     nil,
+		LimitEven:    false,
+		LimitWhich:   0,
+		SkipBeta:     true,
 		SkipVersions: make([]string, 0),
-		Ignore: false,
-	};
+		Ignore:       false,
+	}
 
 	if val, ok := vmap["site"]; ok {
 		if u, err := url.ParseRequestURI(val); err != nil {
-			cfg.IndexSite = u;
+			cfg.IndexSite = u
 		} else {
-			slog.Warn("Invalid site value in PORTSCOUT variable; ignoring", "site", val);
+			slog.Warn("Invalid site value in PORTSCOUT variable; ignoring", "site", val)
 		}
 	}
 
 	if val, ok := vmap["limit"]; ok {
 		if re, err := regexp.Compile(val); err != nil {
-			cfg.LimitVer = re;
+			cfg.LimitVer = re
 		} else {
-			slog.Warn("Invalid limit value in PORTSCOUT variable; ignoring", "limit", val);
+			slog.Warn("Invalid limit value in PORTSCOUT variable; ignoring", "limit", val)
 		}
 	}
 
@@ -76,7 +80,7 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 		vals := strings.SplitN(val, ",", 2)
 
 		which, even, err := (func() (int, bool, error) {
-			even := true;
+			even := true
 
 			if len(vals) != 2 {
 				return 0, even, errors.New("Invalid limitw tuple")
@@ -88,54 +92,54 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 				return which, even, errors.New("Invalid limitw index")
 			}
 
-			evenOdd := strings.ToLower(vals[1]);
+			evenOdd := strings.ToLower(vals[1])
 
 			if evenOdd == "even" {
-				even = true;
+				even = true
 			} else if evenOdd == "odd" {
-				even = false;
+				even = false
 			} else {
-				return which, even, errors.New("Invalid limitw parity");
+				return which, even, errors.New("Invalid limitw parity")
 			}
 
-			return which, even, nil;
-		})();
+			return which, even, nil
+		})()
 
 		if err == nil {
-			slog.Warn("Invalid limitw value in PORTSCOUT variable; ignoring", "limitw", val);
+			slog.Warn("Invalid limitw value in PORTSCOUT variable; ignoring", "limitw", val)
 		} else {
-			cfg.LimitWhich = which;
-			cfg.LimitEven = even;
+			cfg.LimitWhich = which
+			cfg.LimitEven = even
 		}
 	}
 
 	if val, ok := vmap["ignore"]; ok {
 		if val == "1" || val == "true" || val == "yes" {
-			cfg.Ignore = true;
+			cfg.Ignore = true
 		} else {
-			cfg.Ignore = false;
+			cfg.Ignore = false
 		}
 	}
 
 	if val, ok := vmap["skipb"]; ok {
 		if val == "1" || val == "true" || val == "yes" {
-			cfg.SkipBeta = true;
+			cfg.SkipBeta = true
 		} else {
-			cfg.SkipBeta = false;
+			cfg.SkipBeta = false
 		}
 	}
 
 	if val, ok := vmap["skipv"]; ok {
-		vers := strings.Split(val, ",");
+		vers := strings.Split(val, ",")
 
 		for _, ver := range vers {
 			if trimmed := strings.TrimSpace(ver); trimmed != "" {
-				cfg.SkipVersions = append(cfg.SkipVersions, trimmed);
+				cfg.SkipVersions = append(cfg.SkipVersions, trimmed)
 			}
 		}
 	}
 
-	return cfg, nil;
+	return cfg, nil
 }
 
 func NewTree(makeCmd string, portsDir string, maxProc int) *Tree {
@@ -219,7 +223,7 @@ func (tree *Tree) QueryPorts(ctx context.Context) {
 			lines := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")
 
 			ms_subdir := lines[5]
-			files := types.UnmarshalTaggedLists(lines[2]);
+			files := types.UnmarshalTaggedLists(lines[2])
 			sites := types.UnmarshalTaggedLists(strings.ReplaceAll(lines[4], "%SUBDIR%", ms_subdir))
 
 			var github *types.GitHubInfo
@@ -235,7 +239,7 @@ func (tree *Tree) QueryPorts(ctx context.Context) {
 				github = nil
 			}
 
-			_, err = parsePortConfig(lines[8]);
+			_, err = parsePortConfig(lines[8])
 
 			if err != nil {
 				tree.out <- QueryResult{
