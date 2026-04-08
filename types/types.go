@@ -2,10 +2,10 @@ package types
 
 import (
 	"maps"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
-	"net/url"
 )
 
 var siteGroupSuffix = regexp.MustCompile(`:([A-Za-z0-9_][A-Za-z0-9_,]*)$`)
@@ -23,13 +23,13 @@ type GitHubInfo struct {
 }
 
 type PortConfig struct {
-	IndexSite *url.URL
-	LimitVer *regexp.Regexp
-	LimitEven bool
-	LimitWhich int
-	SkipBeta bool
+	IndexSite    *url.URL
+	LimitVer     *regexp.Regexp
+	LimitEven    bool
+	LimitWhich   int
+	SkipBeta     bool
 	SkipVersions []string
-	Ignore bool
+	Ignore       bool
 }
 
 type TaggedList struct {
