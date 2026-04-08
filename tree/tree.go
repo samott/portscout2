@@ -40,16 +40,6 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 
 	vmap := make(map[string]string)
 
-	for _, pair := range vars {
-		vals := strings.SplitN(pair, "=", 2)
-
-		if len(vals) != 2 {
-			return cfg, errors.New("Invalid tuple in PORTSCOUT variable")
-		}
-
-		vmap[vals[0]] = vals[1]
-	}
-
 	cfg := types.PortConfig{
 		IndexSite:    nil,
 		LimitVer:     nil,
@@ -58,6 +48,16 @@ func parsePortConfig(portscoutStr string) (types.PortConfig, error) {
 		SkipBeta:     true,
 		SkipVersions: make([]string, 0),
 		Ignore:       false,
+	}
+
+	for _, pair := range vars {
+		vals := strings.SplitN(pair, "=", 2)
+
+		if len(vals) != 2 {
+			return cfg, errors.New("Invalid tuple in PORTSCOUT variable")
+		}
+
+		vmap[vals[0]] = vals[1]
 	}
 
 	if val, ok := vmap["site"]; ok {
