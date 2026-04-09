@@ -50,7 +50,7 @@ type PortInfo struct {
 	Maintainer       string
 	Comment          string
 	GitHub           *GitHubInfo
-	IndexSite        string
+	Config           PortConfig
 }
 
 func (p PortName) String() string {

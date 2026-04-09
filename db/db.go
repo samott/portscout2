@@ -32,6 +32,7 @@ type portEntry struct {
 	DistFiles   string  `db:"distFiles"`
 	GitHub      *string `db:"gitHub"`
 	IndexSite   string  `db:"indexSite"`
+	Config      string  `db:"portConfig"`
 }
 
 func NewDB(dbUrl string) (*DB, error) {
@@ -69,6 +70,13 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		github = nil
 	}
 
+	pcbytes, err := json.Marshal(port.Config)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal PortConfig field to JSON: %w", err)
+	}
+	pcstring := string(pcbytes)
+	portConfig := &pcstring
+
 	masterSites := types.MarshalTaggedLists(port.MasterSites)
 	distFiles := types.MarshalTaggedLists(port.DistFiles)
 
@@ -80,7 +88,7 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		"masterSites": masterSites,
 		"distFiles":   distFiles,
 		"gitHub":      github,
-		"indexSite":   port.IndexSite,
+		"portConfig":  portConfig,
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
 		goqu.Record{
@@ -168,6 +176,14 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 		masterSites := types.UnmarshalTaggedLists(row.MasterSites)
 		distFiles := types.UnmarshalTaggedLists(row.DistFiles)
 
+		var portConfig types.PortConfig
+
+		err := json.Unmarshal([]byte(row.Config), &portConfig)
+
+		if err != nil {
+			return nil, fmt.Errorf("Error while unmarshalling PortConfig JSON: %w", err)
+		}
+
 		ports = append(ports, types.PortInfo{
 			Name: types.PortName{
 				Category: row.Category,
@@ -177,7 +193,7 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			MasterSites: masterSites,
 			DistFiles:   distFiles,
 			GitHub:      github,
-			IndexSite:   row.IndexSite,
+			Config:      portConfig,
 		})
 	}
 
