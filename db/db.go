@@ -27,6 +27,7 @@ type portEntry struct {
 	Category    string
 	CheckedAt   *time.Time `db:"checkedAt"`
 	UpdatedAt   *time.Time `db:"updatedAt"`
+	Portscout   string     `db:"portscout"`
 	Maintainer  string
 	MasterSites string  `db:"masterSites"`
 	DistFiles   string  `db:"distFiles"`
@@ -87,6 +88,7 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 		"masterSites": masterSites,
 		"distFiles":   distFiles,
 		"gitHub":      github,
+		"portscout":   port.Portscout,
 		"portConfig":  portConfig,
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
@@ -188,6 +190,7 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 				Category: row.Category,
 				Name:     row.Name,
 			},
+			Portscout:   row.Portscout,
 			Maintainer:  row.Maintainer,
 			MasterSites: masterSites,
 			DistFiles:   distFiles,
