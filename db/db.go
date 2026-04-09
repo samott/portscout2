@@ -31,7 +31,6 @@ type portEntry struct {
 	MasterSites string  `db:"masterSites"`
 	DistFiles   string  `db:"distFiles"`
 	GitHub      *string `db:"gitHub"`
-	IndexSite   string  `db:"indexSite"`
 	Config      string  `db:"portConfig"`
 }
 
