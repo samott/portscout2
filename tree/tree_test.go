@@ -68,4 +68,14 @@ func TestParsePortConfig(t *testing.T) {
 	if !result2.Ignore {
 		t.Fatal("Incorrect ignore value")
 	}
+
+	result3, err := parsePortConfig("limit:^[0-9.]+$")
+
+	if !result3.LimitVer.MatchString("1.234") {
+		t.Fatal("Regexp positive match failed");
+	}
+
+	if result3.LimitVer.MatchString("a1.234") {
+		t.Fatal("Regexp negative match failed");
+	}
 }
