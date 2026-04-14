@@ -9,6 +9,7 @@ CREATE TABLE "ports" (
 	"masterSites" text NOT NULL,
 	"distFiles" text NOT NULL,
 	"gitHub" text,
+	"portscout" text NOT NULL,
 	"portConfig" text NOT NULL,
 	UNIQUE ("category", "name")
 );
