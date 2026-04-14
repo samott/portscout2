@@ -239,7 +239,7 @@ func (tree *Tree) QueryPorts(ctx context.Context) {
 				github = nil
 			}
 
-			_, err = parsePortConfig(lines[8])
+			portConfig, err := parsePortConfig(lines[8])
 
 			if err != nil {
 				tree.out <- QueryResult{
@@ -263,6 +263,7 @@ func (tree *Tree) QueryPorts(ctx context.Context) {
 					SlavePort:        lines[6],
 					MasterPort:       lines[7],
 					Portscout:        lines[8],
+					Config:           portConfig,
 					Maintainer:       lines[9],
 					Comment:          lines[10],
 					GitHub:           github,
