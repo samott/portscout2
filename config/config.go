@@ -25,6 +25,10 @@ type Config struct {
 		MaxReqsCount    int `yaml:"maxReqsCount"`
 		MaxReqsWindowMs int `yaml:"maxReqsWindowMs"`
 	} `yaml:"crawlLimiter"`
+
+	Api struct {
+		Port int `yaml:"port"`
+	} `yaml:"api"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {

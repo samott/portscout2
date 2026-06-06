@@ -13,3 +13,6 @@ crawler:
 crawlLimiter:
   maxReqsCount: 5
   maxReqsWindowMs: 1000
+
+api:
+  port: 4000
