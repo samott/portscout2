@@ -235,6 +235,8 @@ func (db *DB) GetPortUpdates(category *string, maintainer *string) ([]types.Port
 			Maintainer: row.Maintainer,
 			Version:    row.Version,
 			NewVersion: row.NewVersion,
+			UpdatedAt:  row.UpdatedAt,
+			CheckedAt:  row.CheckedAt,
 		})
 	}
 

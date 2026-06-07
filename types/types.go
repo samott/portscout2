@@ -60,7 +60,7 @@ type PortUpdate struct {
 	NewFile    *string    `json:"newFile"`
 	Version    string     `json:"version"`
 	NewVersion *string    `json:"newVersion"`
-	UpdatedAt  time.Time  `json:"updatedAt"`
+	UpdatedAt  *time.Time `json:"updatedAt"`
 	CheckedAt  *time.Time `json:"checkedAt"`
 }
 
