@@ -6,13 +6,14 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 )
 
 var siteGroupSuffix = regexp.MustCompile(`:([A-Za-z0-9_][A-Za-z0-9_,]*)$`)
 
 type PortName struct {
-	Category string
-	Name     string
+	Category string `json:"category"`
+	Name     string `json:"name"`
 }
 
 type GitHubInfo struct {
@@ -51,6 +52,16 @@ type PortInfo struct {
 	Comment          string
 	GitHub           *GitHubInfo
 	Config           PortConfig
+}
+
+type PortUpdate struct {
+	Name       PortName   `json:"port"`
+	Maintainer string     `json:"maintainer"`
+	NewFile    *string    `json:"newFile"`
+	Version    string     `json:"version"`
+	NewVersion *string    `json:"newVersion"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+	CheckedAt  *time.Time `json:"checkedAt"`
 }
 
 func (p PortName) String() string {

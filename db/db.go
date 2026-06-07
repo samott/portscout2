@@ -74,8 +74,7 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 	if err != nil {
 		return fmt.Errorf("Unable to marshal PortConfig field to JSON: %w", err)
 	}
-	pcstring := string(pcbytes)
-	portConfig := &pcstring
+	portConfig := string(pcbytes)
 
 	masterSites := types.MarshalTaggedLists(port.MasterSites)
 	distFiles := types.MarshalTaggedLists(port.DistFiles)
@@ -196,6 +195,46 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 			DistFiles:   distFiles,
 			GitHub:      github,
 			Config:      portConfig,
+		})
+	}
+
+	return ports, nil
+}
+
+func (db *DB) GetPortUpdates(category *string, maintainer *string) ([]types.PortUpdate, error) {
+	query := db.gdb.From("ports").Prepared(true)
+
+	if category != nil {
+		query = query.Where(goqu.Ex{
+			"category": category,
+		})
+	}
+
+	if maintainer != nil {
+		query = query.Where(goqu.Ex{
+			"maintainer": maintainer,
+		})
+	}
+
+	var rows []portEntry
+
+	ports := make([]types.PortUpdate, 0)
+
+	err := query.ScanStructs(&rows)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error while scanning structs: %w", err)
+	}
+
+	for _, row := range rows {
+		ports = append(ports, types.PortUpdate{
+			Name: types.PortName{
+				Category: row.Category,
+				Name:     row.Name,
+			},
+			Maintainer: row.Maintainer,
+			Version:    row.Version,
+			NewVersion: row.NewVersion,
 		})
 	}
 
