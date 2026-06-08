@@ -64,6 +64,13 @@ type PortUpdate struct {
 	CheckedAt  *time.Time `json:"checkedAt"`
 }
 
+type MaintainerStats struct {
+	Maintainer       string `json:"maintainer"`
+	TotalPortCount   uint   `json:"totalPortCount"`
+	UpdatedPortCount uint   `json:"updatedPortCount"`
+	StalePct         string `json:"stalePct"`
+}
+
 func (p PortName) String() string {
 	return p.Category + "/" + p.Name
 }

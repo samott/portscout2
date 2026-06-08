@@ -243,6 +243,49 @@ func (db *DB) GetPortUpdates(category *string, maintainer *string) ([]types.Port
 	return ports, nil
 }
 
+func (db *DB) GetMaintainerStats() ([]types.MaintainerStats, error) {
+	inner := goqu.
+		From("portdata").
+		Select(
+			goqu.L("LOWER(maintainer)").As("maintainer"),
+			goqu.COUNT("*").As("total"),
+			goqu.L(`
+				COUNT(*) FILTER (
+					WHERE newVersion IS NOT NULL
+					  AND newVersion != version
+				)
+			`).As("withNewDistfile"),
+		).
+		GroupBy(
+			goqu.L("LOWER(maintainer)"),
+		)
+
+	query := goqu.
+		From(inner.As("pd1")).
+		Select(
+			goqu.C("maintainer"),
+			goqu.C("total"),
+			goqu.COALESCE(goqu.C("withNewDistfile"), 0).As("withNewDistfile"),
+			goqu.L(`
+				100.0 * COALESCE(withNewDistfile, 0) / total
+			`).As("percentage"),
+		)
+
+	sql, args, err := query.ToSQL()
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.db.Exec(sql, args...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 func (db *DB) GetLastCommit() (string, error) {
 	query := db.gdb.From("repo").Select("lastCommit").Limit(1).Prepared(true)
 
