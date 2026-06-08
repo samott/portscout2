@@ -25,6 +25,26 @@ var emailRegex = regexp.MustCompile(
 	`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`,
 )
 
+func (api *Api) getStats(w http.ResponseWriter, r *http.Request) {
+	maintainers, err := api.db.GetMaintainerStats()
+
+	if err != nil {
+		slog.Error("Error", "err", err)
+	}
+
+	result, err := json.Marshal(struct {
+		Maintainers []types.MaintainerStats `json:"maintainers"`
+	}{
+		Maintainers: maintainers,
+	})
+
+	if err != nil {
+		slog.Error("Error", "err", err)
+	}
+
+	w.Write(result)
+}
+
 func (api *Api) getByCategory(w http.ResponseWriter, r *http.Request) {
 	category := r.PathValue("category")
 
@@ -99,6 +119,7 @@ func main() {
 		cfg: cfg,
 	}
 
+	mux.HandleFunc("GET /updates/", api.getStats)
 	mux.HandleFunc("GET /updates/category/{category}", api.getByCategory)
 	mux.HandleFunc("GET /updates/maintainer/{maintainer}", api.getByMaintainer)
 
