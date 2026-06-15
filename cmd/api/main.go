@@ -25,6 +25,22 @@ var emailRegex = regexp.MustCompile(
 	`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`,
 )
 
+func cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (api *Api) getStats(w http.ResponseWriter, r *http.Request) {
 	maintainers, err := api.db.GetMaintainerStats()
 
@@ -127,7 +143,7 @@ func main() {
 
 	slog.Info("Starting API service...", "peer", listenStr)
 
-	err = http.ListenAndServe(listenStr, mux)
+	err = http.ListenAndServe(listenStr, cors(mux))
 
 	if err != nil {
 		log.Fatal(err)
