@@ -116,7 +116,7 @@ func (db *DB) RemovePort(port types.PortName) error {
 
 	query := db.gdb.From("ports").Delete().Where(goqu.Ex{
 		"name":     port.Name,
-		"category": port.Name,
+		"category": port.Category,
 	}).Prepared(true)
 
 	sql, args, err := query.ToSQL()
