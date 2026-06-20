@@ -201,6 +201,61 @@ func (db *DB) GetPorts(limit uint, offset uint) ([]types.PortInfo, error) {
 	return ports, nil
 }
 
+func (db *DB) GetPortByName(portName types.PortName) (*types.PortInfo, error) {
+	query := db.gdb.From("ports").
+		Where(goqu.Ex{
+			"name":     portName.Name,
+			"category": portName.Category,
+		}).Prepared(true)
+
+	var row portEntry
+	var port types.PortInfo
+
+	_, err := query.ScanStruct(&row)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error while scanning structs: %w", err)
+	}
+
+	var github *types.GitHubInfo
+
+	if row.GitHub != nil {
+		err := json.Unmarshal([]byte(*row.GitHub), &github)
+
+		if err != nil {
+			return nil, fmt.Errorf("Error while unmarshalling GitHub JSON: %w", err)
+		}
+	} else {
+		github = nil
+	}
+
+	masterSites := types.UnmarshalTaggedLists(row.MasterSites)
+	distFiles := types.UnmarshalTaggedLists(row.DistFiles)
+
+	var portConfig types.PortConfig
+
+	err = json.Unmarshal([]byte(row.Config), &portConfig)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error while unmarshalling PortConfig JSON: %w", err)
+	}
+
+	port = types.PortInfo{
+		Name: types.PortName{
+			Category: row.Category,
+			Name:     row.Name,
+		},
+		Portscout:   row.Portscout,
+		Maintainer:  row.Maintainer,
+		MasterSites: masterSites,
+		DistFiles:   distFiles,
+		GitHub:      github,
+		Config:      portConfig,
+	}
+
+	return &port, nil
+}
+
 func (db *DB) GetPortUpdates(category *string, maintainer *string) ([]types.PortUpdate, error) {
 	query := db.gdb.From("ports").Prepared(true)
 
