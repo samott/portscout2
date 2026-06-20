@@ -92,7 +92,15 @@ func (db *DB) UpdatePort(port types.PortInfo) error {
 	}).OnConflict(goqu.DoUpdate(
 		"category, name",
 		goqu.Record{
-			"version": port.DistVersion,
+			"name":        port.Name.Name,
+			"category":    port.Name.Category,
+			"version":     port.DistVersion,
+			"maintainer":  port.Maintainer,
+			"masterSites": masterSites,
+			"distFiles":   distFiles,
+			"gitHub":      github,
+			"portscout":   port.Portscout,
+			"portConfig":  portConfig,
 		},
 	)).Prepared(true)
 
