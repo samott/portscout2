@@ -121,3 +121,70 @@ func TestUpdatePort(t *testing.T) {
 		t.Fatal("Port not removed")
 	}
 }
+
+func TestGetPortUpdates(t *testing.T) {
+	err := db.RemovePort(types.PortName{
+		Name:     "test-44",
+		Category: "mycat-1",
+	})
+
+	if err != nil {
+		t.Fatal("RemovePort failed")
+	}
+
+	err = db.RemovePort(types.PortName{
+		Name:     "test-16",
+		Category: "mycat-2",
+	})
+
+	if err != nil {
+		t.Fatal("RemovePort failed")
+	}
+
+	err = db.UpdatePort(types.PortInfo{
+		Name: types.PortName{
+			Name:     "test-44",
+			Category: "mycat-1",
+		},
+		Maintainer: "mycatguy@example.net",
+	})
+
+	if err != nil {
+		t.Fatal("UpdatePort failed")
+	}
+
+	err = db.UpdatePort(types.PortInfo{
+		Name: types.PortName{
+			Name:     "test-16",
+			Category: "mycat-2",
+		},
+		Maintainer: "mycatguy@example.net",
+	})
+
+	if err != nil {
+		t.Fatal("UpdatePort failed")
+	}
+
+	cat := "mycat-1"
+	maintainer := "mycatguy@example.net"
+
+	updates, err := db.GetPortUpdates(&cat, nil)
+
+	if err != nil {
+		t.Fatal("GetPortUpdates failed")
+	}
+
+	if len(updates) != 1 {
+		t.Fatal("Incorrect number of updates found for category")
+	}
+
+	updates, err = db.GetPortUpdates(nil, &maintainer)
+
+	if err != nil {
+		t.Fatal("GetPortUpdates failed")
+	}
+
+	if len(updates) != 2 {
+		t.Fatal("Incorrect number of updates found for maintainer")
+	}
+}
