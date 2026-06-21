@@ -219,10 +219,14 @@ func (db *DB) GetPortByName(portName types.PortName) (*types.PortInfo, error) {
 	var row portEntry
 	var port types.PortInfo
 
-	_, err := query.ScanStruct(&row)
+	found, err := query.ScanStruct(&row)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error while scanning structs: %w", err)
+	}
+
+	if !found {
+		return nil, nil
 	}
 
 	var github *types.GitHubInfo
