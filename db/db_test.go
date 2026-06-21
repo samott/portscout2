@@ -98,4 +98,26 @@ func TestUpdatePort(t *testing.T) {
 	if port.Name.Name != "test" || port.Name.Category != "cat" || port.Maintainer != "newmaintainer@example.net" {
 		t.Fatal("Incorrect field value")
 	}
+
+	err = db.RemovePort(types.PortName{
+		Name:     "test",
+		Category: "cat",
+	})
+
+	if err != nil {
+		t.Fatal("RemovePort failed")
+	}
+
+	port, err = db.GetPortByName(types.PortName{
+		Name:     "test",
+		Category: "cat",
+	})
+
+	if err != nil {
+		t.Fatal("GetPortByName failed")
+	}
+
+	if port != nil {
+		t.Fatal("Port not removed")
+	}
 }
